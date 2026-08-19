@@ -1,34 +1,57 @@
 function showScreen(id) {
-  document.querySelectorAll(".screen").forEach((screen) => {
-    screen.hidden = screen.id !== id;
+  var screens = document.querySelectorAll(".screen");
+  var i;
+  for (i = 0; i < screens.length; i += 1) {
+    if (screens[i].id === id) {
+      screens[i].classList.add("is-on");
+      screens[i].hidden = false;
+    } else {
+      screens[i].classList.remove("is-on");
+      screens[i].hidden = true;
+    }
+  }
+}
+
+function afterLayout(fn) {
+  requestAnimationFrame(function () {
+    requestAnimationFrame(fn);
   });
 }
 
 function boot() {
-  const stop = getStopFromUrl();
+  try {
+    startQuest();
+  } catch (err) {
+    showScreen("screen-home");
+  }
+}
+
+function startQuest() {
+  var stop = getStopFromUrl();
   if (!stop) {
     showScreen("screen-home");
     return;
   }
 
-  const slices = getSlicesForStop(stop);
-  const resolved = resolvePrize(stop);
-  const canvas = document.querySelector("#wheel");
-  const spinBtn = document.querySelector("#spin-btn");
-  const prizeEmoji = document.querySelector("#prize-emoji");
-  const prizeLabel = document.querySelector("#prize-label");
-  const prizeContinue = document.querySelector("#prize-continue");
-  const clueImg = document.querySelector("#clue-image");
-  const cluePrompt = document.querySelector("#clue-prompt");
-  const clueHintBtn = document.querySelector("#hint-btn");
-  const clueHint = document.querySelector("#clue-hint");
-  const clueEnding = document.querySelector("#clue-ending");
-  const wheelTitle = document.querySelector("#wheel-title");
+  var slices = getSlicesForStop(stop);
+  var resolved = resolvePrize(stop);
+  var canvas = document.querySelector("#wheel");
+  var spinBtn = document.querySelector("#spin-btn");
+  var prizeEmoji = document.querySelector("#prize-emoji");
+  var prizeLabel = document.querySelector("#prize-label");
+  var prizeContinue = document.querySelector("#prize-continue");
+  var clueImg = document.querySelector("#clue-image");
+  var cluePrompt = document.querySelector("#clue-prompt");
+  var clueHintBtn = document.querySelector("#hint-btn");
+  var clueHint = document.querySelector("#clue-hint");
+  var clueEnding = document.querySelector("#clue-ending");
+  var wheelTitle = document.querySelector("#wheel-title");
+  var stopBadge = document.querySelector("#stop-badge");
 
   wheelTitle.textContent = stop.final ? "Фінальний спінь" : "Колесо фортуни";
-  document.querySelector("#stop-badge").textContent = stop.final
+  stopBadge.textContent = stop.final
     ? "Фінал"
-    : `Точка ${stop.id} з ${STOPS.length}`;
+    : "Точка " + stop.id + " з " + STOPS.length;
 
   clueImg.src = stop.image;
   clueImg.alt = stop.prompt;
@@ -54,8 +77,8 @@ function boot() {
     showScreen("screen-clue");
   }
 
-  clueHintBtn.addEventListener("click", () => {
-    const open = clueHint.hidden;
+  clueHintBtn.addEventListener("click", function () {
+    var open = clueHint.hidden;
     clueHint.hidden = !open;
     clueHintBtn.setAttribute("aria-expanded", String(open));
     clueHintBtn.textContent = open ? "Сховати підказку" : "Підказка";
@@ -74,17 +97,23 @@ function boot() {
     return;
   }
 
-  const wheel = createWheel(canvas, slices, { gift: Boolean(stop.final) });
   showScreen("screen-wheel");
-
-  spinBtn.addEventListener("click", async () => {
-    if (wheel.spinning) return;
-    spinBtn.disabled = true;
-    spinBtn.textContent = "Крутиться…";
-    await wheel.spinTo(resolved.index);
-    savePrize(stop.id, resolved.prize.id);
-    window.setTimeout(() => goToPrize(resolved.prize), 550);
+  afterLayout(function () {
+    var wheel = createWheel(canvas, slices, { gift: Boolean(stop.final) });
+    spinBtn.addEventListener("click", function () {
+      if (wheel.isSpinning()) {
+        return;
+      }
+      spinBtn.disabled = true;
+      spinBtn.textContent = "Крутиться…";
+      wheel.spinTo(resolved.index).then(function () {
+        savePrize(stop.id, resolved.prize.id);
+        window.setTimeout(function () {
+          goToPrize(resolved.prize);
+        }, 550);
+      });
+    });
   });
 }
 
-document.addEventListener("DOMContentLoaded", boot);
+boot();

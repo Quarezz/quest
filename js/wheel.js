@@ -1,46 +1,64 @@
-const WHEEL_COLORS = ["#f0c14b", "#f7ead8", "#e85d4c", "#3d2a1f"];
-const GIFT_COLORS = ["#f0c14b", "#8b1e3f", "#f7ead8", "#c9a227"];
+var WHEEL_COLORS = ["#f0c14b", "#f7ead8", "#e85d4c", "#3d2a1f"];
+var GIFT_COLORS = ["#f0c14b", "#8b1e3f", "#f7ead8", "#c9a227"];
 
 function sliceColors(slices, isGift) {
-  const palette = isGift ? GIFT_COLORS : WHEEL_COLORS;
-  return slices.map((_, i) => palette[i % palette.length]);
+  var palette = isGift ? GIFT_COLORS : WHEEL_COLORS;
+  return slices.map(function (_, i) {
+    return palette[i % palette.length];
+  });
 }
 
-function createWheel(canvas, slices, options = {}) {
-  const ctx = canvas.getContext("2d");
-  const dpr = Math.max(1, window.devicePixelRatio || 1);
-  let rotation = 0;
-  let spinning = false;
+function createWheel(canvas, slices, options) {
+  options = options || {};
+  var ctx = canvas.getContext("2d");
+  if (!ctx) {
+    throw new Error("canvas");
+  }
+  var dpr = Math.max(1, window.devicePixelRatio || 1);
+  var rotation = 0;
+  var spinning = false;
+  var drawSize = 240;
 
-  function cssSize() {
-    return canvas.clientWidth;
+  function measureSide() {
+    var wrap = canvas.parentElement;
+    var fallback = Math.max(240, Math.floor((window.innerWidth || 320) - 40));
+    var width = wrap && wrap.clientWidth ? wrap.clientWidth : fallback;
+    if (!width) {
+      width = fallback;
+    }
+    return Math.max(240, Math.floor(Math.min(width, fallback)));
   }
 
   function size() {
-    const wrap = canvas.parentElement;
-    const max = Math.min(wrap.clientWidth, window.innerWidth - 40);
-    const side = Math.max(240, Math.floor(max));
-    canvas.style.width = `${side}px`;
-    canvas.style.height = `${side}px`;
-    canvas.width = Math.floor(side * dpr);
-    canvas.height = Math.floor(side * dpr);
+    drawSize = measureSide();
+    canvas.style.width = drawSize + "px";
+    canvas.style.height = drawSize + "px";
+    canvas.width = Math.floor(drawSize * dpr);
+    canvas.height = Math.floor(drawSize * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     draw();
   }
 
   function draw() {
-    const sizePx = cssSize();
-    const cx = sizePx / 2;
-    const cy = sizePx / 2;
-    const radius = sizePx / 2 - 4;
-    const n = slices.length;
-    const arc = (2 * Math.PI) / n;
-    const colors = sliceColors(slices, options.gift);
+    var sizePx = drawSize;
+    if (sizePx < 32) {
+      return;
+    }
+    var cx = sizePx / 2;
+    var cy = sizePx / 2;
+    var radius = Math.max(8, sizePx / 2 - 4);
+    var n = slices.length;
+    var arc = (2 * Math.PI) / n;
+    var colors = sliceColors(slices, options.gift);
+    var i;
+    var start;
+    var mid;
+    var emojiSize;
 
     ctx.clearRect(0, 0, sizePx, sizePx);
 
-    for (let i = 0; i < n; i += 1) {
-      const start = rotation - Math.PI / 2 - arc / 2 + i * arc;
+    for (i = 0; i < n; i += 1) {
+      start = rotation - Math.PI / 2 - arc / 2 + i * arc;
       ctx.beginPath();
       ctx.moveTo(cx, cy);
       ctx.arc(cx, cy, radius, start, start + arc);
@@ -51,20 +69,22 @@ function createWheel(canvas, slices, options = {}) {
       ctx.strokeStyle = "#140e0a";
       ctx.stroke();
 
-      const mid = start + arc / 2;
-      const emojiSize = Math.max(32, sizePx * 0.12);
-      ctx.font = `${emojiSize}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+      mid = start + arc / 2;
+      emojiSize = Math.max(32, sizePx * 0.12);
+      ctx.font =
+        emojiSize +
+        'px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(
         slices[i].emoji,
         cx + Math.cos(mid) * radius * 0.62,
-        cy + Math.sin(mid) * radius * 0.62,
+        cy + Math.sin(mid) * radius * 0.62
       );
     }
 
     ctx.beginPath();
-    ctx.arc(cx, cy, radius * 0.14, 0, Math.PI * 2);
+    ctx.arc(cx, cy, Math.max(6, radius * 0.14), 0, Math.PI * 2);
     ctx.fillStyle = "#140e0a";
     ctx.fill();
     ctx.lineWidth = 4;
@@ -73,29 +93,33 @@ function createWheel(canvas, slices, options = {}) {
   }
 
   function easeOutCubic(t) {
-    return 1 - (1 - t) ** 3;
+    return 1 - Math.pow(1 - t, 3);
   }
 
   function spinTo(index) {
-    if (spinning) return Promise.resolve();
+    if (spinning) {
+      return Promise.resolve();
+    }
     spinning = true;
 
-    const n = slices.length;
-    const sliceAngle = (2 * Math.PI) / n;
-    const twoPi = Math.PI * 2;
-    const current = ((rotation % twoPi) + twoPi) % twoPi;
-    const targetMod = ((-index * sliceAngle) % twoPi + twoPi) % twoPi;
-    const extraTurns = 5 + Math.random() * 2;
-    let delta = extraTurns * twoPi + targetMod - current;
-    if (delta < 4 * twoPi) delta += twoPi;
+    var n = slices.length;
+    var sliceAngle = (2 * Math.PI) / n;
+    var twoPi = Math.PI * 2;
+    var current = ((rotation % twoPi) + twoPi) % twoPi;
+    var targetMod = (((-index * sliceAngle) % twoPi) + twoPi) % twoPi;
+    var extraTurns = 5 + Math.random() * 2;
+    var delta = extraTurns * twoPi + targetMod - current;
+    if (delta < 4 * twoPi) {
+      delta += twoPi;
+    }
 
-    const start = rotation;
-    const duration = 4200;
-    const startedAt = performance.now();
+    var start = rotation;
+    var duration = 4200;
+    var startedAt = performance.now();
 
-    return new Promise((resolve) => {
+    return new Promise(function (resolve) {
       function frame(now) {
-        const t = Math.min(1, (now - startedAt) / duration);
+        var t = Math.min(1, (now - startedAt) / duration);
         rotation = start + delta * easeOutCubic(t);
         draw();
         if (t < 1) {
@@ -115,8 +139,8 @@ function createWheel(canvas, slices, options = {}) {
   window.addEventListener("resize", size);
 
   return {
-    spinTo,
-    get spinning() {
+    spinTo: spinTo,
+    isSpinning: function () {
       return spinning;
     },
     resize: size,

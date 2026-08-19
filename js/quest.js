@@ -1,13 +1,13 @@
-const FOOD_PRIZES = [
+var FOOD_PRIZES = [
   { id: "kinder", label: "Kinder Surprise", emoji: "🥚" },
   { id: "raffaello", label: "Raffaello", emoji: "🥥" },
   { id: "juice", label: "Сік", emoji: "🧃" },
   { id: "snickers", label: "Snickers", emoji: "🍫" },
 ];
 
-const GIFT_PRIZE = { id: "gift", label: "Подарунок", emoji: "🎁" };
+var GIFT_PRIZE = { id: "gift", label: "Подарунок", emoji: "🎁" };
 
-const STOPS = [
+var STOPS = [
   {
     id: 1,
     image: "assets/1.jpg",
@@ -49,40 +49,68 @@ const STOPS = [
   },
 ];
 
-const STORAGE_PREFIX = "quest-stop-";
+var STORAGE_PREFIX = "quest-stop-";
 
 function getStopFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  const raw = params.get("s");
-  const id = Number.parseInt(raw || "", 10);
-  return STOPS.find((stop) => stop.id === id) || null;
+  var params = new URLSearchParams(window.location.search);
+  var raw = params.get("s");
+  var id = parseInt(raw || "", 10);
+  var i;
+  for (i = 0; i < STOPS.length; i += 1) {
+    if (STOPS[i].id === id) {
+      return STOPS[i];
+    }
+  }
+  return null;
+}
+
+function clonePrize(prize) {
+  return { id: prize.id, label: prize.label, emoji: prize.emoji };
 }
 
 function getSlicesForStop(stop) {
+  var slices;
+  var i;
   if (stop.final) {
-    return Array.from({ length: 8 }, () => ({ ...GIFT_PRIZE }));
+    slices = [];
+    for (i = 0; i < 8; i += 1) {
+      slices.push(clonePrize(GIFT_PRIZE));
+    }
+    return slices;
   }
-  return FOOD_PRIZES.map((prize) => ({ ...prize }));
+  slices = [];
+  for (i = 0; i < FOOD_PRIZES.length; i += 1) {
+    slices.push(clonePrize(FOOD_PRIZES[i]));
+  }
+  return slices;
 }
 
 function storageKey(stopId) {
-  return `${STORAGE_PREFIX}${stopId}`;
+  return STORAGE_PREFIX + stopId;
 }
 
 function readStopState(stopId) {
   try {
-    const raw = localStorage.getItem(storageKey(stopId));
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== "object") return null;
+    var raw = localStorage.getItem(storageKey(stopId));
+    if (!raw) {
+      return null;
+    }
+    var parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") {
+      return null;
+    }
     return parsed;
-  } catch {
+  } catch (err) {
     return null;
   }
 }
 
 function writeStopState(stopId, state) {
-  localStorage.setItem(storageKey(stopId), JSON.stringify(state));
+  try {
+    localStorage.setItem(storageKey(stopId), JSON.stringify(state));
+  } catch (err) {
+    // Private mode on iOS can block storage.
+  }
 }
 
 function pickRandomIndex(length) {
@@ -90,10 +118,21 @@ function pickRandomIndex(length) {
 }
 
 function resolvePrize(stop) {
-  const slices = getSlicesForStop(stop);
-  const saved = readStopState(stop.id);
+  var slices = getSlicesForStop(stop);
+  var saved = readStopState(stop.id);
+  var savedIndex;
+  var i;
+  var index;
+  var prize;
+
   if (saved && saved.prizeId) {
-    const savedIndex = slices.findIndex((slice) => slice.id === saved.prizeId);
+    savedIndex = -1;
+    for (i = 0; i < slices.length; i += 1) {
+      if (slices[i].id === saved.prizeId) {
+        savedIndex = i;
+        break;
+      }
+    }
     if (savedIndex !== -1) {
       return {
         prize: slices[savedIndex],
@@ -104,22 +143,28 @@ function resolvePrize(stop) {
     }
   }
 
-  const index = pickRandomIndex(slices.length);
-  const prize = slices[index];
+  index = pickRandomIndex(slices.length);
+  prize = slices[index];
   return {
-    prize,
-    index,
+    prize: prize,
+    index: index,
     seenPhoto: false,
     alreadySpun: false,
   };
 }
 
 function savePrize(stopId, prizeId) {
-  const current = readStopState(stopId) || {};
-  writeStopState(stopId, { ...current, prizeId, seenPhoto: Boolean(current.seenPhoto) });
+  var current = readStopState(stopId) || {};
+  writeStopState(stopId, {
+    prizeId: prizeId,
+    seenPhoto: Boolean(current.seenPhoto),
+  });
 }
 
 function markPhotoSeen(stopId) {
-  const current = readStopState(stopId) || {};
-  writeStopState(stopId, { ...current, seenPhoto: true });
+  var current = readStopState(stopId) || {};
+  writeStopState(stopId, {
+    prizeId: current.prizeId,
+    seenPhoto: true,
+  });
 }
