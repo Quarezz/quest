@@ -96,21 +96,37 @@ function createWheel(canvas, slices, options) {
     return 1 - Math.pow(1 - t, 3);
   }
 
+  function twoPi() {
+    return Math.PI * 2;
+  }
+
+  function wrapAngle(angle) {
+    var tau = twoPi();
+    return ((angle % tau) + tau) % tau;
+  }
+
+  function indexUnderPointer() {
+    var n = slices.length;
+    var sliceAngle = twoPi() / n;
+    var idx = Math.round(wrapAngle(-rotation) / sliceAngle);
+    return ((idx % n) + n) % n;
+  }
+
   function spinTo(index) {
     if (spinning) {
-      return Promise.resolve();
+      return Promise.resolve(indexUnderPointer());
     }
     spinning = true;
 
     var n = slices.length;
-    var sliceAngle = (2 * Math.PI) / n;
-    var twoPi = Math.PI * 2;
-    var current = ((rotation % twoPi) + twoPi) % twoPi;
-    var targetMod = (((-index * sliceAngle) % twoPi) + twoPi) % twoPi;
-    var extraTurns = 5 + Math.random() * 2;
-    var delta = extraTurns * twoPi + targetMod - current;
-    if (delta < 4 * twoPi) {
-      delta += twoPi;
+    var sliceAngle = twoPi() / n;
+    var tau = twoPi();
+    var current = wrapAngle(rotation);
+    var targetMod = wrapAngle(-index * sliceAngle);
+    var extraTurns = 6 + Math.floor(Math.random() * 3);
+    var delta = extraTurns * tau + targetMod - current;
+    if (delta <= extraTurns * tau) {
+      delta += tau;
     }
 
     var start = rotation;
@@ -128,7 +144,7 @@ function createWheel(canvas, slices, options) {
           rotation = start + delta;
           draw();
           spinning = false;
-          resolve();
+          resolve(indexUnderPointer());
         }
       }
       requestAnimationFrame(frame);

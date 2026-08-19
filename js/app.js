@@ -106,10 +106,11 @@ function startQuest() {
       }
       spinBtn.disabled = true;
       spinBtn.textContent = "Крутиться…";
-      wheel.spinTo(resolved.index).then(function () {
-        savePrize(stop.id, resolved.prize.id);
+      wheel.spinTo(resolved.index).then(function (landedIndex) {
+        var prize = slices[landedIndex] || resolved.prize;
+        savePrize(stop.id, prize.id);
         window.setTimeout(function () {
-          goToPrize(resolved.prize);
+          goToPrize(prize);
         }, 550);
       });
     });
