@@ -46,12 +46,8 @@ function startQuest() {
   var clueHint = document.querySelector("#clue-hint");
   var clueEnding = document.querySelector("#clue-ending");
   var wheelTitle = document.querySelector("#wheel-title");
-  var stopBadge = document.querySelector("#stop-badge");
 
   wheelTitle.textContent = stop.final ? "Фінальний спінь" : "Колесо фортуни";
-  stopBadge.textContent = stop.final
-    ? "Фінал"
-    : "Точка " + stop.id + " з " + STOPS.length;
 
   clueImg.src = stop.image;
   clueImg.alt = stop.prompt;
