@@ -34,7 +34,7 @@ function startQuest() {
   }
 
   var slices = getSlicesForStop(stop);
-  var resolved = resolvePrize(stop);
+  var picked = pickPrize(stop);
   var canvas = document.querySelector("#wheel");
   var spinBtn = document.querySelector("#spin-btn");
   var prizeEmoji = document.querySelector("#prize-emoji");
@@ -73,7 +73,6 @@ function startQuest() {
   }
 
   function goToClue() {
-    markPhotoSeen(stop.id);
     showScreen("screen-clue");
   }
 
@@ -86,17 +85,6 @@ function startQuest() {
 
   prizeContinue.addEventListener("click", goToClue);
 
-  if (resolved.alreadySpun && resolved.seenPhoto) {
-    fillPrize(resolved.prize);
-    goToClue();
-    return;
-  }
-
-  if (resolved.alreadySpun) {
-    goToPrize(resolved.prize);
-    return;
-  }
-
   showScreen("screen-wheel");
   afterLayout(function () {
     var wheel = createWheel(canvas, slices, { gift: Boolean(stop.final) });
@@ -106,9 +94,8 @@ function startQuest() {
       }
       spinBtn.disabled = true;
       spinBtn.textContent = "Крутиться…";
-      wheel.spinTo(resolved.index).then(function (landedIndex) {
-        var prize = slices[landedIndex] || resolved.prize;
-        savePrize(stop.id, prize.id);
+      wheel.spinTo(picked.index).then(function (landedIndex) {
+        var prize = slices[landedIndex] || picked.prize;
         window.setTimeout(function () {
           goToPrize(prize);
         }, 550);
