@@ -47,7 +47,7 @@ function startQuest() {
   var clueEnding = document.querySelector("#clue-ending");
   var wheelTitle = document.querySelector("#wheel-title");
 
-  wheelTitle.textContent = stop.final ? "Фінальний спінь" : "Колесо фортуни";
+  wheelTitle.textContent = stop.final ? "Фінальний круть" : "Колесо фортуни";
 
   clueImg.src = stop.image;
   clueImg.alt = stop.prompt;

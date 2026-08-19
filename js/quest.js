@@ -42,7 +42,7 @@ var STOPS = [
     id: 6,
     image: "assets/6.jpg",
     prompt: "Ти на фініші",
-    hint: "SUNDAY cafe/bar — останнє місце квесту.",
+    hint: "Чекай і страждай ❣️",
     final: true,
     ending:
       "Тут побачимось о 19:00 :P",
